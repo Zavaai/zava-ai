@@ -659,15 +659,17 @@ async function speakText(){
   if(!text||!checkLimit())return;
   synth.cancel();
   const utt=new SpeechSynthesisUtterance(text);
-  const show=voices.filter(v=>v.lang.startsWith('en')||v.lang.startsWith('bn'));
-  if(show[selVoice])utt.voice=show[selVoice];
+  const allVoices=window.speechSynthesis.getVoices();
+const show=allVoices.filter(v=>v.lang.startsWith('en')||v.lang.startsWith('bn'));
+if(show.length>0) utt.voice=show[selVoice]||show[0];
   utt.rate=parseFloat(document.getElementById('ttsRate').value);
   const btn=document.getElementById('ttsBtn');
   btn.disabled=true;btn.textContent='⏳ Speaking...';
   document.getElementById('audioOutput').innerHTML=`<div class="audio-player"><button class="play-btn" onclick="synth.cancel()">⏹</button><div class="audio-info"><div class="audio-title">🔊 Speaking now...</div><div class="audio-sub">${text.length} chars</div></div></div>`;
   utt.onend=()=>{btn.disabled=false;btn.textContent='🔊 Generate Speech';};
   utt.onerror=()=>{btn.disabled=false;btn.textContent='🔊 Generate Speech';};
-  synth.speak(utt);
+  window.speechSynthesis.cancel();
+setTimeout(()=>{ window.speechSynthesis.speak(utt); }, 200);
   await trackUsage('tts');
 }
 
