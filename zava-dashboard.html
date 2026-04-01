@@ -319,6 +319,11 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;displa
             <div class="style-chip" onclick="selStyle(this,'oil painting, artistic')">🎨 Painting</div>
             <div class="style-chip" onclick="selStyle(this,'3d render, cinematic')">🎬 3D</div>
             <div class="style-chip" onclick="selStyle(this,'cyberpunk, neon lights')">🌆 Cyberpunk</div>
+            <div class="style-chip" onclick="selStyle(this,'portrait photography, bokeh, shallow depth of field')">🤳 Portrait</div>
+<div class="style-chip" onclick="selStyle(this,'fantasy art, magical, epic, detailed')">🧙 Fantasy</div>
+<div class="style-chip" onclick="selStyle(this,'minimalist, clean, simple, modern design')">✨ Minimal</div>
+<div class="style-chip" onclick="selStyle(this,'food photography, delicious, restaurant quality')">🍔 Food</div>
+<div class="style-chip" onclick="selStyle(this,'architecture, building, interior design')">🏛 Architecture</div>
           </div>
           <div class="image-gallery" id="imageGallery">
             <div class="img-placeholder"><span style="font-size:1.8rem">🎨</span><span>Enter a prompt and hit Generate!</span></div>
@@ -620,7 +625,12 @@ async function generateImage(){
   gallery.insertBefore(loading,gallery.firstChild);
   gallery.querySelector('.img-placeholder')?.remove();
   const full=imageStyle?prompt+', '+imageStyle:prompt;
-  const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(full)}?width=768&height=768&seed=${Math.floor(Math.random()*99999)}&nologo=true`;
+  const models=['flux','flux-realism','flux-anime','flux-3d','turbo'];
+const modelMap={'📷 Realistic':'flux-realism','🌸 Anime':'flux-anime','🎬 3D':'flux-3d','🌆 Cyberpunk':'flux','🎨 Painting':'flux'};
+const selectedModel = modelMap[document.querySelector('.style-chip.sel')?.textContent?.trim()]||'flux';
+const negative='blurry, ugly, bad anatomy, watermark, text, low quality, distorted';
+const enhanced = full + ', highly detailed, sharp focus, professional';
+const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=${selectedModel}&width=1024&height=1024&seed=${Math.floor(Math.random()*99999)}&nologo=true&negative=${encodeURIComponent(negative)}`;
   try{
     await new Promise((res,rej)=>{const i=new Image();i.onload=res;i.onerror=rej;i.src=url;});
     loading.remove();
