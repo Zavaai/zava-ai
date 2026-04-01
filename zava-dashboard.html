@@ -446,17 +446,7 @@ async function init(){
     document.getElementById('authScreen').style.display='flex';
   }
 }
-      currentUser=session.user;
-      await loadProfile();
-      document.getElementById('mainApp').style.display='flex';
-    } else {
-      document.getElementById('authScreen').style.display='flex';
-    }
-  } catch(e){
-    document.getElementById('loadingScreen').style.display='none';
-    document.getElementById('authScreen').style.display='flex';
-  }
-}
+      
 init();
 
 sb.auth.onAuthStateChange(async(event,session)=>{
