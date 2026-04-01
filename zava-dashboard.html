@@ -423,10 +423,29 @@ const FREE_LIMIT=20, PRO_LIMIT=200;
 
 // ===== INIT =====
 async function init(){
+  // Timeout after 5 seconds no matter what
+  const timeout = setTimeout(()=>{
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+  }, 5000);
+
   try {
     const { data:{ session } } = await sb.auth.getSession();
+    clearTimeout(timeout);
     document.getElementById('loadingScreen').style.display='none';
     if(session?.user){
+      currentUser=session.user;
+      await loadProfile();
+      document.getElementById('mainApp').style.display='flex';
+    } else {
+      document.getElementById('authScreen').style.display='flex';
+    }
+  } catch(e){
+    clearTimeout(timeout);
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+  }
+}
       currentUser=session.user;
       await loadProfile();
       document.getElementById('mainApp').style.display='flex';
