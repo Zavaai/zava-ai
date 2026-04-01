@@ -420,7 +420,12 @@ const SUPA_URL = 'https://odkayhifmryfvaeotxqa.supabase.co';
 const SUPA_KEY = 'sb_publishable_p_Q1DnbYeMGoYXhVhYVfGA_T8MzdaZB';
 const { createClient } = supabase;
 const sb = createClient(SUPA_URL, SUPA_KEY, {
-  auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storageKey: 'zava-ai-auth'
+  }
 });
 
 let currentUser=null, userProfile=null, chatHistory=[], codeHistory=[], imageStyle='', selVoice=0, voices=[], dailyUsage=0;
@@ -558,7 +563,12 @@ async function doLogin(){
   }
 }
 
-async function doLogout(){await sb.auth.signOut();window.location.href='./index.html';}
+async function doLogout(){
+  await sb.auth.signOut({scope:'local'});
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href='./index.html';
+}
 function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
 function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
 
