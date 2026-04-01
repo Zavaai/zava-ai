@@ -427,7 +427,7 @@ async function init(){
   const timeout = setTimeout(()=>{
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('authScreen').style.display='flex';
-  }, 5000);
+  }, 3000);
 
   try {
     const { data:{ session } } = await sb.auth.getSession();
