@@ -587,12 +587,9 @@ async function doLogout(){
   await sb.auth.signOut({ scope: 'local' });
   localStorage.clear();
   sessionStorage.clear();
-  // Force clear any lingering session in Supabase client
-  try {
-    await sb.auth.setSession(null);
-  } catch(e) { /* ignore */ }
-  // Hard reload to reset everything
-  window.location.href = './dashboard.html';
+  // Reload the current page – this will trigger the init() logic,
+  // see that no session exists, and show the auth screen.
+  window.location.reload();
 }
 function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
 function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
