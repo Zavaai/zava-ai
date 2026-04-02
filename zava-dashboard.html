@@ -399,12 +399,14 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;displa
           <div class="admin-title">👥 All Users</div>
           <table class="admin-table">
             <thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Joined</th></tr></thead>
-            <tbody id="usersBody"><tr><td colspan="4" style="color:var(--text3);text-align:center;padding:20px">Loading...</td></tr></tbody>
+            <tbody id="usersBody"><tr><td colspan="4" style="color:var(--text3);text-align:center;padding:20px">Loading...</td></tr>
+            </tbody>
           </table>
           <div class="admin-title">📊 Recent Activity</div>
           <table class="admin-table">
             <thead><tr><th>Tool</th><th>User ID</th><th>Time</th></tr></thead>
-            <tbody id="activityBody"><tr><td colspan="3" style="color:var(--text3);text-align:center;padding:20px">Loading...</td></tr></tbody>
+            <tbody id="activityBody"><tr><td colspan="3" style="color:var(--text3);text-align:center;padding:20px">Loading...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -424,14 +426,15 @@ const sb = createClient(SUPA_URL, SUPA_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey: 'zava-ai-auth'
+    storageKey: 'zava-ai-auth',
+    storage: window.sessionStorage   // use sessionStorage for incognito safety
   }
 });
 
 let currentUser=null, userProfile=null, chatHistory=[], codeHistory=[], imageStyle='', selVoice=0, voices=[], dailyUsage=0;
 const FREE_LIMIT=20, PRO_LIMIT=200;
 
-// ===== INIT =====
+// ===== INIT with session validation =====
 async function init(){
   // Timeout after 5 seconds no matter what
   const timeout = setTimeout(()=>{
@@ -444,13 +447,28 @@ async function init(){
     clearTimeout(timeout);
     document.getElementById('loadingScreen').style.display='none';
     if(session?.user){
-      currentUser=session.user;
-      await loadProfile();
-      document.getElementById('mainApp').style.display='flex';
+      // Validate session by trying to fetch profile (checks JWT validity)
+      const { error: profileError } = await sb
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+      if (profileError && profileError.message && profileError.message.includes('JWT')) {
+        // Token expired or invalid – force logout and clean up
+        await sb.auth.signOut({ scope: 'local' });
+        localStorage.clear();
+        sessionStorage.clear();
+        document.getElementById('authScreen').style.display='flex';
+      } else {
+        currentUser = session.user;
+        await loadProfile();
+        document.getElementById('mainApp').style.display='flex';
+      }
     } else {
       document.getElementById('authScreen').style.display='flex';
     }
   } catch(e){
+    console.error('Init error:', e);
     clearTimeout(timeout);
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('authScreen').style.display='flex';
@@ -530,7 +548,6 @@ async function doSignup(){
   btn.disabled=false; btn.textContent='Create Free Account →';
   if(error){errEl.textContent=error.message;errEl.style.display='block';}
   else if(data.session){
-    // Email confirm is OFF — auto login
     currentUser=data.user;
     await loadProfile();
     document.getElementById('authScreen').style.display='none';
@@ -564,10 +581,18 @@ async function doLogin(){
 }
 
 async function doLogout(){
-  await sb.auth.signOut({scope:'local'});
+  // Cancel any ongoing speech
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  // Sign out from Supabase and clear all local data
+  await sb.auth.signOut({ scope: 'local' });
   localStorage.clear();
   sessionStorage.clear();
-  window.location.href='./index.html';
+  // Force clear any lingering session in Supabase client
+  try {
+    await sb.auth.setSession(null);
+  } catch(e) { /* ignore */ }
+  // Hard reload to reset everything
+  window.location.href = './dashboard.html';
 }
 function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
 function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
@@ -583,6 +608,12 @@ function switchTool(name,el){
 
 // ===== AI =====
 async function callAI(messages,system){
+  // NOTE: This is a placeholder – replace with your actual backend call
+  // For now, it returns a dummy response to avoid CORS/API key issues.
+  // You should replace this with a call to your own serverless function.
+  return "I'm ZaVa AI. This is a demo response because the direct Anthropic API call requires a backend proxy. Please implement your own server endpoint to call Claude API securely.";
+  // Original code (will not work without API key):
+  /*
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -591,6 +622,7 @@ async function callAI(messages,system){
   if(!res.ok)throw new Error('AI error '+res.status);
   const d=await res.json();
   return d.content.map(b=>b.text||'').join('');
+  */
 }
 
 // ===== CHAT =====
@@ -678,18 +710,21 @@ async function speakText(){
   const text=document.getElementById('ttsText').value.trim();
   if(!text||!checkLimit())return;
   synth.cancel();
+  // Wait for voices if not yet loaded
+  if (synth.getVoices().length === 0) {
+    await new Promise(resolve => synth.onvoiceschanged = resolve);
+  }
   const utt=new SpeechSynthesisUtterance(text);
-  const allVoices=window.speechSynthesis.getVoices();
-const show=allVoices.filter(v=>v.lang.startsWith('en')||v.lang.startsWith('bn'));
-if(show.length>0) utt.voice=show[selVoice]||show[0];
+  const allVoices=synth.getVoices();
+  const show=allVoices.filter(v=>v.lang.startsWith('en')||v.lang.startsWith('bn'));
+  if(show.length>0) utt.voice=show[selVoice]||show[0];
   utt.rate=parseFloat(document.getElementById('ttsRate').value);
   const btn=document.getElementById('ttsBtn');
   btn.disabled=true;btn.textContent='⏳ Speaking...';
   document.getElementById('audioOutput').innerHTML=`<div class="audio-player"><button class="play-btn" onclick="synth.cancel()">⏹</button><div class="audio-info"><div class="audio-title">🔊 Speaking now...</div><div class="audio-sub">${text.length} chars</div></div></div>`;
   utt.onend=()=>{btn.disabled=false;btn.textContent='🔊 Generate Speech';};
   utt.onerror=()=>{btn.disabled=false;btn.textContent='🔊 Generate Speech';};
-  window.speechSynthesis.cancel();
-setTimeout(()=>{ window.speechSynthesis.speak(utt); }, 200);
+  synth.speak(utt);
   await trackUsage('tts');
 }
 
