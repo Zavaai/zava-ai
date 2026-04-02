@@ -302,34 +302,44 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;displa
       </div>
       <!-- IMAGE -->
       <div class="tool-panel" id="panel-image">
-        <div class="tool-header">
-          <div class="tool-header-icon" style="background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(236,72,153,0.05));border:1px solid rgba(236,72,153,0.2)">🎨</div>
-          <div><div class="tool-header-title">AI Image Generator</div><div class="tool-header-sub">Free unlimited — Pollinations AI</div></div>
-        </div>
-        <div class="image-layout">
-          <div class="image-top">
-            <input class="image-prompt-input" id="imagePrompt" placeholder="Describe your image... e.g. beautiful sunset over Padma river"/>
-            <button class="gen-btn" id="genBtn" onclick="generateImage()">✨ Generate</button>
-          </div>
-          <div class="style-row">
-            <span style="font-size:0.7rem;color:var(--text3);align-self:center;margin-right:4px">Style:</span>
-            <div class="style-chip sel" onclick="selStyle(this,'')">Default</div>
-            <div class="style-chip" onclick="selStyle(this,'photorealistic, ultra detailed, 8k')">📷 Realistic</div>
-            <div class="style-chip" onclick="selStyle(this,'anime style, vibrant')">🌸 Anime</div>
-            <div class="style-chip" onclick="selStyle(this,'oil painting, artistic')">🎨 Painting</div>
-            <div class="style-chip" onclick="selStyle(this,'3d render, cinematic')">🎬 3D</div>
-            <div class="style-chip" onclick="selStyle(this,'cyberpunk, neon lights')">🌆 Cyberpunk</div>
-            <div class="style-chip" onclick="selStyle(this,'portrait photography, bokeh, shallow depth of field')">🤳 Portrait</div>
-            <div class="style-chip" onclick="selStyle(this,'fantasy art, magical, epic, detailed')">🧙 Fantasy</div>
-            <div class="style-chip" onclick="selStyle(this,'minimalist, clean, simple, modern design')">✨ Minimal</div>
-            <div class="style-chip" onclick="selStyle(this,'food photography, delicious, restaurant quality')">🍔 Food</div>
-            <div class="style-chip" onclick="selStyle(this,'architecture, building, interior design')">🏛 Architecture</div>
-          </div>
-          <div class="image-gallery" id="imageGallery">
-            <div class="img-placeholder"><span style="font-size:1.8rem">🎨</span><span>Enter a prompt and hit Generate!</span></div>
-          </div>
-        </div>
+  <div class="tool-header">
+    <div class="tool-header-icon" style="background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(236,72,153,0.05));border:1px solid rgba(236,72,153,0.2)">🎨</div>
+    <div><div class="tool-header-title">AI Image Generator</div><div class="tool-header-sub">High resolution · Multiple aspect ratios</div></div>
+  </div>
+  <div class="image-layout">
+    <div class="image-top">
+      <input class="image-prompt-input" id="imagePrompt" placeholder="Describe your image... e.g. beautiful sunset over Padma river"/>
+      <button class="gen-btn" id="genBtn" onclick="generateImage()">✨ Generate</button>
+    </div>
+    <div class="style-row">
+      <span style="font-size:0.7rem;color:var(--text3);align-self:center;margin-right:4px">Style:</span>
+      <div class="style-chip sel" onclick="selStyle(this,'')">Default</div>
+      <div class="style-chip" onclick="selStyle(this,'photorealistic, ultra detailed, 8k')">📷 Realistic</div>
+      <div class="style-chip" onclick="selStyle(this,'anime style, vibrant')">🌸 Anime</div>
+      <div class="style-chip" onclick="selStyle(this,'oil painting, artistic')">🎨 Painting</div>
+      <div class="style-chip" onclick="selStyle(this,'3d render, cinematic')">🎬 3D</div>
+      <div class="style-chip" onclick="selStyle(this,'cyberpunk, neon lights')">🌆 Cyberpunk</div>
+      <div class="style-chip" onclick="selStyle(this,'portrait photography, bokeh, shallow depth of field')">🤳 Portrait</div>
+      <div class="style-chip" onclick="selStyle(this,'fantasy art, magical, epic, detailed')">🧙 Fantasy</div>
+      <div class="style-chip" onclick="selStyle(this,'minimalist, clean, simple, modern design')">✨ Minimal</div>
+      <div class="style-chip" onclick="selStyle(this,'food photography, delicious, restaurant quality')">🍔 Food</div>
+      <div class="style-chip" onclick="selStyle(this,'architecture, building, interior design')">🏛 Architecture</div>
+    </div>
+    <!-- NEW ASPECT RATIO ROW -->
+    <div class="style-row" style="justify-content: space-between; flex-wrap: wrap; margin-top: 8px;">
+      <span style="font-size:0.7rem;color:var(--text3);align-self:center;">Aspect Ratio:</span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div class="style-chip sel" data-ratio="1:1" onclick="setAspect(this, 1024, 1024)">⬜ 1:1 (Square)</div>
+        <div class="style-chip" data-ratio="16:9" onclick="setAspect(this, 1920, 1080)">🖥️ 16:9 (Wide)</div>
+        <div class="style-chip" data-ratio="9:16" onclick="setAspect(this, 1080, 1920)">📱 9:16 (Vertical)</div>
+        <div class="style-chip" data-ratio="4:3" onclick="setAspect(this, 1600, 1200)">📷 4:3 (Classic)</div>
       </div>
+    </div>
+    <div class="image-gallery" id="imageGallery">
+      <div class="img-placeholder"><span style="font-size:1.8rem">🎨</span><span>Enter a prompt and hit Generate!</span></div>
+    </div>
+  </div>
+</div>
       <!-- TTS -->
       <div class="tool-panel" id="panel-tts">
         <div class="tool-header">
