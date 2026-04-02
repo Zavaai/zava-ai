@@ -589,12 +589,6 @@ async function doLogout(){
 
 // ===== AI =====
 async function callAI(messages,system){
-  // NOTE: This is a placeholder – replace with your actual backend call
-  // For now, it returns a dummy response to avoid CORS/API key issues.
-  // You should replace this with a call to your own serverless function.
-  return "I'm ZaVa AI. This is a demo response because the direct Anthropic API call requires a backend proxy. Please implement your own server endpoint to call Claude API securely.";
-  // Original code (will not work without API key):
-  /*
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -603,7 +597,6 @@ async function callAI(messages,system){
   if(!res.ok)throw new Error('AI error '+res.status);
   const d=await res.json();
   return d.content.map(b=>b.text||'').join('');
-  */
 }
 
 // ===== CHAT =====
