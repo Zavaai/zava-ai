@@ -583,12 +583,19 @@ async function doLogin(){
 async function doLogout(){
   // Cancel any ongoing speech
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  // Sign out from Supabase and clear all local data
-  await sb.auth.signOut({ scope: 'local' });
+  
+  // Clear all local storage (removes the Supabase session)
   localStorage.clear();
   sessionStorage.clear();
-  // Reload the current page – this will trigger the init() logic,
-  // see that no session exists, and show the auth screen.
+  
+  // Optional: try to sign out silently, but ignore any error
+  try {
+    await sb.auth.signOut({ scope: 'local' });
+  } catch(e) {
+    console.log("Sign out network error ignored:", e);
+  }
+  
+  // Reload the page – will show auth screen because no session exists
   window.location.reload();
 }
 function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
