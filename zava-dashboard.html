@@ -591,13 +591,8 @@ async function doLogout(){
   // Reload the page – will show auth screen because no session exists
   window.location.reload();
 }
-  
-  // Reload the page – will show auth screen because no session exists
-  window.location.reload();
-}
 function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
 function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
-
 // ===== NAV =====
 function switchTool(name,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
