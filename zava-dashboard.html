@@ -588,12 +588,9 @@ async function doLogout(){
   localStorage.clear();
   sessionStorage.clear();
   
-  // Optional: try to sign out silently, but ignore any error
-  try {
-    await sb.auth.signOut({ scope: 'local' });
-  } catch(e) {
-    console.log("Sign out network error ignored:", e);
-  }
+  // Reload the page – will show auth screen because no session exists
+  window.location.reload();
+}
   
   // Reload the page – will show auth screen because no session exists
   window.location.reload();
