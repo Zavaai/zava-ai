@@ -746,7 +746,24 @@ async function loadAdmin(){
       :'<tr><td colspan="3" style="color:var(--text3);text-align:center;padding:20px">No activity yet</td></tr>';
   }catch(e){console.log('Admin error:',e);}
 }
+// ===== NAV =====
+function switchTool(name,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='admin')loadAdmin();
+}
 
+function showLogin(){
+  document.getElementById('signupView').style.display='none';
+  document.getElementById('loginView').style.display='block';
+}
+
+function showSignup(){
+  document.getElementById('loginView').style.display='none';
+  document.getElementById('signupView').style.display='block';
+}
 // ===== UTILS =====
 function appendMsg(container,role,text){
   const div=document.createElement('div');
