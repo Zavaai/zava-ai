@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZaVa AI — Image Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07070a;--bg2:#0e0e14;--bg3:#13131c;
+  --surface:#161620;--surface2:#1e1e2e;--surface3:#252538;
+  --border:#ffffff08;--border2:#ffffff12;--border3:#ffffff20;
+  --accent:#6d28d9;--accent2:#8b5cf6;--accent3:#a78bfa;--accent4:#c4b5fd;
+  --pink:#ec4899;--cyan:#06b6d4;--green:#10b981;--orange:#f59e0b;
+  --text:#f1f0ff;--text2:#8b8aaa;--text3:#4a4a6a;
+  --glow:rgba(109,40,217,0.4);--glow2:rgba(139,92,246,0.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* GRID BG */
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(109,40,217,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(109,40,217,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;position:relative;z-index:1}
+
+/* LEFT PANEL */
+.left{width:340px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+
+.brand{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.brand-logo{font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#fff,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer}
+.brand-logo span{-webkit-text-fill-color:var(--accent2)}
+.brand-tag{padding:2px 8px;background:rgba(109,40,217,0.15);border:1px solid rgba(109,40,217,0.3);border-radius:100px;font-size:0.62rem;color:var(--accent3);font-family:'JetBrains Mono',monospace;letter-spacing:0.06em}
+
+.left-scroll{flex:1;overflow-y:auto;padding:20px}
+.left-scroll::-webkit-scrollbar{width:3px}
+.left-scroll::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+.section-label{font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px}
+
+/* PROMPT */
+.prompt-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;overflow:hidden;margin-bottom:20px;transition:border-color 0.2s}
+.prompt-box:focus-within{border-color:rgba(139,92,246,0.4)}
+.prompt-textarea{width:100%;background:transparent;border:none;outline:none;padding:14px 16px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.88rem;resize:none;min-height:110px;line-height:1.6}
+.prompt-textarea::placeholder{color:var(--text3)}
+.prompt-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid var(--border)}
+.char-count{font-size:0.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.enhance-btn{padding:4px 12px;border-radius:100px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--accent3);font-size:0.7rem;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.2s}
+.enhance-btn:hover{background:rgba(139,92,246,0.2)}
+
+/* NEGATIVE PROMPT */
+.neg-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:20px}
+.neg-input{width:100%;background:transparent;border:none;outline:none;color:var(--text2);font-family:'Outfit',sans-serif;font-size:0.82rem;resize:none;min-height:50px}
+.neg-input::placeholder{color:var(--text3)}
+
+/* MODEL GRID */
+.model-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.model-card{padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.model-card:hover{border-color:var(--border3);background:var(--surface2)}
+.model-card.sel{border-color:rgba(139,92,246,0.5);background:rgba(109,40,217,0.12)}
+.model-name{font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:2px}
+.model-desc{font-size:0.65rem;color:var(--text3)}
+.model-badge{display:inline-block;padding:1px 6px;border-radius:100px;font-size:0.58rem;font-family:'JetBrains Mono',monospace;margin-bottom:5px}
+.badge-free{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge-fast{background:rgba(245,158,11,0.12);color:var(--orange);border:1px solid rgba(245,158,11,0.2)}
+.badge-hd{background:rgba(6,182,212,0.12);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)}
+
+/* STYLE CHIPS */
+.style-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.style-chip{padding:5px 12px;border-radius:100px;border:1px solid var(--border2);background:var(--surface);font-size:0.72rem;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.style-chip:hover{border-color:var(--border3);color:var(--text)}
+.style-chip.sel{border-color:rgba(139,92,246,0.5);color:var(--accent3);background:rgba(109,40,217,0.12)}
+
+/* ASPECT RATIO */
+.ratio-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:20px}
+.ratio-btn{padding:8px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;transition:all 0.15s;text-align:center}
+.ratio-btn:hover{border-color:var(--border3)}
+.ratio-btn.sel{border-color:rgba(139,92,246,0.5);background:rgba(109,40,217,0.12)}
+.ratio-visual{width:24px;height:24px;border:1.5px solid var(--text3);border-radius:3px;margin:0 auto 4px}
+.ratio-label{font-size:0.65rem;color:var(--text2);font-family:'JetBrains Mono',monospace}
+
+/* COUNT */
+.count-row{display:flex;gap:6px;margin-bottom:20px}
+.count-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:0.78rem;cursor:pointer;transition:all 0.15s;text-align:center;font-family:'Outfit',sans-serif}
+.count-btn:hover{border-color:var(--border3)}
+.count-btn.sel{border-color:rgba(139,92,246,0.5);color:var(--accent3);background:rgba(109,40,217,0.12)}
+
+/* GENERATE BTN */
+.gen-btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-family:'Outfit',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.25s;box-shadow:0 0 30px var(--glow);letter-spacing:0.02em;position:relative;overflow:hidden}
+.gen-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity 0.2s}
+.gen-btn:hover::before{opacity:1}
+.gen-btn:hover{transform:translateY(-1px);box-shadow:0 4px 40px var(--glow)}
+.gen-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* RIGHT PANEL */
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOP BAR */
+.topbar{padding:0 24px;height:60px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.tab{padding:6px 16px;border-radius:100px;font-size:0.82rem;cursor:pointer;transition:all 0.15s;color:var(--text2)}
+.tab.active{background:rgba(139,92,246,0.15);color:var(--accent3);border:1px solid rgba(139,92,246,0.2)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.top-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:0.78rem;cursor:pointer;transition:all 0.15s;font-family:'Outfit',sans-serif}
+.top-btn:hover{border-color:var(--border3);color:var(--text)}
+
+/* GALLERY */
+.gallery-wrap{flex:1;overflow-y:auto;padding:24px}
+.gallery-wrap::-webkit-scrollbar{width:4px}
+.gallery-wrap::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
+
+.empty-gallery{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text3)}
+.empty-icon{font-size:3rem;opacity:0.5}
+.empty-title{font-size:1rem;font-weight:600;color:var(--text2)}
+.empty-sub{font-size:0.82rem;text-align:center;max-width:300px;line-height:1.6}
+.example-prompts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;max-width:500px}
+.ex-prompt{padding:6px 14px;border-radius:100px;border:1px solid var(--border2);background:var(--surface);font-size:0.75rem;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.ex-prompt:hover{border-color:rgba(139,92,246,0.4);color:var(--accent3);background:rgba(109,40,217,0.08)}
+
+.gallery-grid{display:grid;gap:16px}
+.gallery-grid.count-1{grid-template-columns:1fr;max-width:600px;margin:0 auto}
+.gallery-grid.count-2{grid-template-columns:1fr 1fr}
+.gallery-grid.count-4{grid-template-columns:1fr 1fr}
+
+.img-card{border-radius:14px;overflow:hidden;border:1px solid var(--border2);background:var(--surface);position:relative;group:true;animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+.img-card img{width:100%;display:block;object-fit:cover}
+.img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,7,10,0.9) 0%,transparent 50%);opacity:0;transition:opacity 0.25s;display:flex;flex-direction:column;justify-content:flex-end;padding:16px}
+.img-card:hover .img-overlay{opacity:1}
+.img-actions{display:flex;gap:8px}
+.img-action{padding:6px 14px;border-radius:8px;background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.15s}
+.img-action:hover{background:rgba(255,255,255,0.2)}
+.img-action.primary{background:rgba(139,92,246,0.6);border-color:rgba(139,92,246,0.4)}
+.img-prompt-tag{font-size:0.72rem;color:rgba(255,255,255,0.6);margin-bottom:8px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* LOADING CARD */
+.loading-card{border-radius:14px;border:1px solid var(--border2);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:300px;animation:fadeIn 0.3s ease}
+.loading-spinner{width:40px;height:40px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-label{font-size:0.78rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.loading-bar{width:160px;height:3px;background:var(--border2);border-radius:100px;overflow:hidden}
+.loading-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;animation:loadFill 3s ease-in-out infinite}
+@keyframes loadFill{0%{width:0%}70%{width:85%}100%{width:92%}}
+
+/* PROGRESS */
+.gen-progress{padding:0 24px 16px;flex-shrink:0}
+.progress-bar{height:2px;background:var(--border);border-radius:100px;overflow:hidden;display:none}
+.progress-bar.active{display:block}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:100px;transition:width 0.3s ease}
+
+/* HISTORY STRIP */
+.history-strip{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;flex-shrink:0}
+.history-strip::-webkit-scrollbar{height:3px}
+.history-strip::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
+.history-thumb{width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1px solid var(--border2);cursor:pointer;transition:all 0.15s;opacity:0.6}
+.history-thumb:hover{opacity:1;border-color:var(--accent2)}
+.history-thumb img{width:100%;height:100%;object-fit:cover}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:0.82rem;color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,0.5);z-index:999;transform:translateY(20px);opacity:0;transition:all 0.3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-logo" onclick="window.location.href='./index.html'">ZaVa<span>.</span>AI</div>
+      <div class="brand-tag">IMAGE GEN</div>
+    </div>
+
+    <div class="left-scroll">
+
+      <!-- PROMPT -->
+      <div class="section-label">Prompt</div>
+      <div class="prompt-box">
+        <textarea class="prompt-textarea" id="promptInput" placeholder="Describe your image in detail... e.g. a beautiful Bangladeshi woman in traditional red saree, standing by Padma river at sunset, photorealistic, golden hour lighting" maxlength="800" oninput="updateCharCount()"></textarea>
+        <div class="prompt-footer">
+          <span class="char-count" id="charCount">0 / 800</span>
+          <button class="enhance-btn" onclick="enhancePrompt()">✨ Enhance</button>
+        </div>
+      </div>
+
+      <!-- NEGATIVE PROMPT -->
+      <div class="section-label">Negative Prompt</div>
+      <div class="neg-box" style="margin-bottom:20px">
+        <textarea class="neg-input" id="negInput" placeholder="What to avoid... blurry, ugly, watermark, text" rows="2"></textarea>
+      </div>
+
+      <!-- MODEL -->
+      <div class="section-label">AI Model</div>
+      <div class="model-grid">
+        <div class="model-card sel" onclick="selModel(this,'flux')" data-model="flux">
+          <div class="model-badge badge-free">FREE</div>
+          <div class="model-name">Flux</div>
+          <div class="model-desc">Best overall quality</div>
+        </div>
+        <div class="model-card" onclick="selModel(this,'flux-realism')" data-model="flux-realism">
+          <div class="model-badge badge-hd">REALISM</div>
+          <div class="model-name">Flux Realism</div>
+          <div class="model-desc">Photorealistic output</div>
+        </div>
+        <div class="model-card" onclick="selModel(this,'flux-anime')" data-model="flux-anime">
+          <div class="model-badge badge-free">ANIME</div>
+          <div class="model-name">Flux Anime</div>
+          <div class="model-desc">Anime & illustration</div>
+        </div>
+        <div class="model-card" onclick="selModel(this,'flux-3d')" data-model="flux-3d">
+          <div class="model-badge badge-hd">3D</div>
+          <div class="model-name">Flux 3D</div>
+          <div class="model-desc">3D rendered style</div>
+        </div>
+        <div class="model-card" onclick="selModel(this,'turbo')" data-model="turbo">
+          <div class="model-badge badge-fast">FAST</div>
+          <div class="model-name">Turbo</div>
+          <div class="model-desc">Fastest generation</div>
+        </div>
+        <div class="model-card" onclick="selModel(this,'flux-pro')" data-model="flux-pro">
+          <div class="model-badge badge-hd">PRO</div>
+          <div class="model-name">Flux Pro</div>
+          <div class="model-desc">Maximum quality</div>
+        </div>
+      </div>
+
+      <!-- STYLE -->
+      <div class="section-label">Style</div>
+      <div class="style-wrap">
+        <div class="style-chip sel" onclick="selStyle(this,'')">None</div>
+        <div class="style-chip" onclick="selStyle(this,'photorealistic, hyperrealistic, 8k uhd, sharp focus')">📷 Realistic</div>
+        <div class="style-chip" onclick="selStyle(this,'anime style, manga, vibrant colors, detailed linework')">🌸 Anime</div>
+        <div class="style-chip" onclick="selStyle(this,'cinematic, movie still, dramatic lighting, film grain')">🎬 Cinematic</div>
+        <div class="style-chip" onclick="selStyle(this,'oil painting, impressionist, artistic brushstrokes')">🎨 Painting</div>
+        <div class="style-chip" onclick="selStyle(this,'3d render, octane render, subsurface scattering')">🧊 3D Render</div>
+        <div class="style-chip" onclick="selStyle(this,'cyberpunk, neon lights, futuristic city, rain')">🌆 Cyberpunk</div>
+        <div class="style-chip" onclick="selStyle(this,'portrait photography, bokeh, golden hour, studio lighting')">🤳 Portrait</div>
+        <div class="style-chip" onclick="selStyle(this,'fantasy art, magical, epic landscape, dramatic sky')">🧙 Fantasy</div>
+        <div class="style-chip" onclick="selStyle(this,'minimalist, clean lines, flat design, pastel colors')">✨ Minimal</div>
+        <div class="style-chip" onclick="selStyle(this,'watercolor painting, soft edges, flowing colors')">🖌️ Watercolor</div>
+        <div class="style-chip" onclick="selStyle(this,'pixel art, retro game, 16-bit style')">👾 Pixel Art</div>
+        <div class="style-chip" onclick="selStyle(this,'dark fantasy, gothic, moody atmosphere, shadows')">🌑 Dark</div>
+        <div class="style-chip" onclick="selStyle(this,'food photography, delicious, restaurant quality, close-up')">🍔 Food</div>
+        <div class="style-chip" onclick="selStyle(this,'architecture, modern building, interior design, clean')">🏛 Arch</div>
+      </div>
+
+      <!-- ASPECT RATIO -->
+      <div class="section-label">Aspect Ratio</div>
+      <div class="ratio-grid">
+        <div class="ratio-btn sel" onclick="selRatio(this,1024,1024)">
+          <div class="ratio-visual" style="width:20px;height:20px;margin:0 auto 4px"></div>
+          <div class="ratio-label">1:1</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,1280,720)">
+          <div class="ratio-visual" style="width:28px;height:16px;margin:0 auto 4px"></div>
+          <div class="ratio-label">16:9</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,720,1280)">
+          <div class="ratio-visual" style="width:16px;height:28px;margin:0 auto 4px"></div>
+          <div class="ratio-label">9:16</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,1200,800)">
+          <div class="ratio-visual" style="width:26px;height:18px;margin:0 auto 4px"></div>
+          <div class="ratio-label">3:2</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,800,1200)">
+          <div class="ratio-visual" style="width:18px;height:26px;margin:0 auto 4px"></div>
+          <div class="ratio-label">2:3</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,1200,628)">
+          <div class="ratio-visual" style="width:28px;height:14px;margin:0 auto 4px"></div>
+          <div class="ratio-label">1.91:1</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,1080,1080)">
+          <div class="ratio-visual" style="width:20px;height:20px;margin:0 auto 4px"></div>
+          <div class="ratio-label">Insta</div>
+        </div>
+        <div class="ratio-btn" onclick="selRatio(this,1500,500)">
+          <div class="ratio-visual" style="width:30px;height:10px;margin:0 auto 4px"></div>
+          <div class="ratio-label">Banner</div>
+        </div>
+      </div>
+
+      <!-- COUNT -->
+      <div class="section-label">Number of Images</div>
+      <div class="count-row">
+        <div class="count-btn sel" onclick="selCount(this,1)">1</div>
+        <div class="count-btn" onclick="selCount(this,2)">2</div>
+        <div class="count-btn" onclick="selCount(this,4)">4</div>
+      </div>
+
+      <!-- GENERATE -->
+      <button class="gen-btn" id="genBtn" onclick="generate()">✨ Generate Image</button>
+
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="tab active">🖼 Generated</div>
+      </div>
+      <div class="topbar-right">
+        <button class="top-btn" onclick="clearAll()">🗑 Clear All</button>
+        <button class="top-btn" onclick="window.location.href='./zava-dashboard.html'" style="border-color:rgba(139,92,246,0.3);color:var(--accent3)">← Dashboard</button>
+      </div>
+    </div>
+
+    <div class="gen-progress">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="gallery-wrap" id="galleryWrap">
+      <div class="empty-gallery" id="emptyState">
+        <div class="empty-icon">🎨</div>
+        <div class="empty-title">Your canvas is empty</div>
+        <div class="empty-sub">Describe your vision and hit Generate. Try one of these:</div>
+        <div class="example-prompts">
+          <div class="ex-prompt" onclick="usePrompt('Beautiful Bangladeshi landscape, Sundarbans mangrove forest, golden sunset, photorealistic')">🌿 Sundarbans sunset</div>
+          <div class="ex-prompt" onclick="usePrompt('Portrait of a Bangladeshi woman in red saree, traditional jewelry, soft bokeh background, studio lighting')">👩 Traditional portrait</div>
+          <div class="ex-prompt" onclick="usePrompt('Futuristic Dhaka city skyline at night, cyberpunk aesthetic, neon lights, rain reflections')">🌆 Cyber Dhaka</div>
+          <div class="ex-prompt" onclick="usePrompt('Delicious Bangladeshi biryani, food photography, restaurant quality, overhead shot, garnished')">🍛 BD Biryani</div>
+          <div class="ex-prompt" onclick="usePrompt('Abstract digital art, flowing purple and cyan colors, geometric patterns, 4K wallpaper')">🎨 Abstract art</div>
+          <div class="ex-prompt" onclick="usePrompt('Cute anime girl with traditional Bengali dress, cherry blossoms, spring atmosphere, vibrant colors')">🌸 Anime portrait</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-strip" id="historyStrip" style="display:none"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let selectedModel = 'flux';
+let selectedStyle = '';
+let selectedWidth = 1024;
+let selectedHeight = 1024;
+let selectedCount = 1;
+let isGenerating = false;
+let history = [];
+
+function updateCharCount(){
+  const v = document.getElementById('promptInput').value.length;
+  document.getElementById('charCount').textContent = v + ' / 800';
+}
+
+function selModel(el, model){
+  document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedModel = model;
+}
+
+function selStyle(el, style){
+  document.querySelectorAll('.style-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedStyle = style;
+}
+
+function selRatio(el, w, h){
+  document.querySelectorAll('.ratio-btn').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedWidth = w;
+  selectedHeight = h;
+}
+
+function selCount(el, count){
+  document.querySelectorAll('.count-btn').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedCount = count;
+}
+
+function usePrompt(text){
+  document.getElementById('promptInput').value = text;
+  updateCharCount();
+  generate();
+}
+
+async function enhancePrompt(){
+  const prompt = document.getElementById('promptInput').value.trim();
+  if(!prompt){ showToast('Enter a prompt first!'); return; }
+  const btn = document.querySelector('.enhance-btn');
+  btn.textContent = '⏳ Enhancing...';
+  btn.disabled = true;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:200,
+        messages:[{role:'user',content:`Enhance this image generation prompt to be more detailed and vivid. Return ONLY the enhanced prompt, nothing else: "${prompt}"`}]
+      })
+    });
+    const d = await res.json();
+    const enhanced = d.content.map(b=>b.text||'').join('').trim();
+    document.getElementById('promptInput').value = enhanced;
+    updateCharCount();
+    showToast('✨ Prompt enhanced!');
+  }catch(e){
+    showToast('Enhancement failed, try again');
+  }
+  btn.textContent = '✨ Enhance';
+  btn.disabled = false;
+}
+
+async function generate(){
+  if(isGenerating) return;
+  const prompt = document.getElementById('promptInput').value.trim();
+  if(!prompt){ showToast('Please enter a prompt!'); return; }
+
+  isGenerating = true;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+
+  // Hide empty state
+  document.getElementById('emptyState')?.remove();
+
+  // Show progress
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  progressBar.classList.add('active');
+  let progress = 0;
+  const progressInterval = setInterval(()=>{
+    progress = Math.min(progress + Math.random()*8, 88);
+    progressFill.style.width = progress + '%';
+  }, 300);
+
+  // Build gallery grid
+  const wrap = document.getElementById('galleryWrap');
+  const gridId = 'grid-' + Date.now();
+  const grid = document.createElement('div');
+  grid.className = `gallery-grid count-${selectedCount}`;
+  grid.id = gridId;
+  wrap.insertBefore(grid, wrap.firstChild);
+
+  // Add loading cards
+  const loadingCards = [];
+  for(let i=0; i<selectedCount; i++){
+    const card = document.createElement('div');
+    card.className = 'loading-card';
+    card.innerHTML = `
+      <div class="loading-spinner"></div>
+      <div class="loading-label">Generating image ${i+1}/${selectedCount}...</div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    `;
+    grid.appendChild(card);
+    loadingCards.push(card);
+  }
+
+  // Build full prompt
+  const negPrompt = document.getElementById('negInput').value.trim() || 'blurry, ugly, bad anatomy, watermark, text, low quality, distorted, deformed';
+  const fullPrompt = selectedStyle ? prompt + ', ' + selectedStyle : prompt;
+  const enhanced = fullPrompt + ', highly detailed, sharp focus, professional quality';
+
+  // Generate all images
+  const promises = [];
+  for(let i=0; i<selectedCount; i++){
+    const seed = Math.floor(Math.random() * 999999);
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?model=${selectedModel}&width=${selectedWidth}&height=${selectedHeight}&seed=${seed}&nologo=true&enhance=true&negative=${encodeURIComponent(negPrompt)}`;
+    promises.push(loadImage(url, prompt, i));
+  }
+
+  const results = await Promise.allSettled(promises);
+
+  // Replace loading cards with real images
+  results.forEach((result, i)=>{
+    const card = loadingCards[i];
+    if(result.status === 'fulfilled'){
+      const {url, prompt: p} = result.value;
+      card.className = 'img-card';
+      card.innerHTML = `
+        <img src="${url}" alt="${p}" style="aspect-ratio:${selectedWidth}/${selectedHeight}"/>
+        <div class="img-overlay">
+          <div class="img-prompt-tag">${p}</div>
+          <div class="img-actions">
+            <button class="img-action primary" onclick="downloadImg('${url}')">⬇ Download</button>
+            <button class="img-action" onclick="window.open('${url}','_blank')">🔍 Full Size</button>
+            <button class="img-action" onclick="usePrompt('${p.replace(/'/g,"\\'")}')">🔄 Regenerate</button>
+          </div>
+        </div>
+      `;
+      // Add to history
+      addToHistory(url);
+    } else {
+      card.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;color:var(--text3)">
+          <span style="font-size:2rem">❌</span>
+          <span style="font-size:0.8rem">Failed to generate</span>
+          <button onclick="generate()" style="padding:6px 14px;border-radius:8px;background:var(--accent);border:none;color:#fff;font-family:'Outfit',sans-serif;font-size:0.78rem;cursor:pointer">Try Again</button>
+        </div>
+      `;
+    }
+  });
+
+  // Done
+  clearInterval(progressInterval);
+  progressFill.style.width = '100%';
+  setTimeout(()=>{
+    progressBar.classList.remove('active');
+    progressFill.style.width = '0%';
+  }, 500);
+
+  isGenerating = false;
+  btn.disabled = false;
+  btn.textContent = '✨ Generate Image';
+  showToast(`✅ ${results.filter(r=>r.status==='fulfilled').length} image(s) generated!`);
+}
+
+function loadImage(url, prompt, index){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve({url, prompt, index});
+    img.onerror = ()=> reject(new Error('Failed'));
+    img.src = url;
+    // Timeout after 60s
+    setTimeout(()=> reject(new Error('Timeout')), 60000);
+  });
+}
+
+function addToHistory(url){
+  history.unshift(url);
+  if(history.length > 20) history = history.slice(0,20);
+  const strip = document.getElementById('historyStrip');
+  strip.style.display = 'flex';
+  strip.innerHTML = history.map(u=>`
+    <div class="history-thumb" onclick="window.open('${u}','_blank')">
+      <img src="${u}" alt="history"/>
+    </div>
+  `).join('');
+}
+
+function downloadImg(url){
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'zava-ai-' + Date.now() + '.jpg';
+  a.target = '_blank';
+  a.click();
+  showToast('⬇ Download started!');
+}
+
+function clearAll(){
+  const wrap = document.getElementById('galleryWrap');
+  wrap.innerHTML = `
+    <div class="empty-gallery" id="emptyState">
+      <div class="empty-icon">🎨</div>
+      <div class="empty-title">Your canvas is empty</div>
+      <div class="empty-sub">Describe your vision and hit Generate. Try one of these:</div>
+      <div class="example-prompts">
+        <div class="ex-prompt" onclick="usePrompt('Beautiful Bangladeshi landscape, Sundarbans mangrove forest, golden sunset, photorealistic')">🌿 Sundarbans sunset</div>
+        <div class="ex-prompt" onclick="usePrompt('Portrait of a Bangladeshi woman in red saree, traditional jewelry, soft bokeh background, studio lighting')">👩 Traditional portrait</div>
+        <div class="ex-prompt" onclick="usePrompt('Futuristic Dhaka city skyline at night, cyberpunk aesthetic, neon lights, rain reflections')">🌆 Cyber Dhaka</div>
+        <div class="ex-prompt" onclick="usePrompt('Delicious Bangladeshi biryani, food photography, restaurant quality, overhead shot')">🍛 BD Biryani</div>
+      </div>
+    </div>
+  `;
+  history = [];
+  document.getElementById('historyStrip').style.display = 'none';
+  document.getElementById('historyStrip').innerHTML = '';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 3000);
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey || e.metaKey) && e.key === 'Enter') generate();
+});
+</script>
+</body>
+</html>
